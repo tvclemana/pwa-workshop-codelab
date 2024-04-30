@@ -13,8 +13,8 @@ Copyright 2021 Google LLC
  See the License for the specific language governing permissions and
  limitations under the License.
  */
- import { warmStrategyCache } from 'workbox-recipes';
- import { CacheFirst } from 'workbox-strategies';
+ import { offlineFallback, warmStrategyCache } from 'workbox-recipes';
+ import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
  import { registerRoute } from 'workbox-routing';
  import { CacheableResponsePlugin } from 'workbox-cacheable-response';
  import { ExpirationPlugin } from 'workbox-expiration';
@@ -38,3 +38,21 @@ Copyright 2021 Google LLC
  });
  
  registerRoute(({ request }) => request.mode === 'navigate', pageCache);
+ 
+ // Set up asset cache
+ registerRoute(
+   ({ request }) => ['style', 'script', 'worker'].includes(request.destination),
+   new StaleWhileRevalidate({
+     cacheName: 'asset-cache',
+     plugins: [
+       new CacheableResponsePlugin({
+         statuses: [0, 200],
+       }),
+     ],
+   }),
+ );
+ 
+ // Set up offline fallback
+ offlineFallback({
+   pageFallback: '/offline.html',
+ });
